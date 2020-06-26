@@ -237,8 +237,11 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
       next if attachment['url'].blank? || media_attachments.size >= 4
 
       begin
-        href             = Addressable::URI.parse(attachment['url']).normalize.to_s
-        media_attachment = MediaAttachment.create(account: @account, remote_url: href, description: attachment['summary'].presence || attachment['name'].presence, focus: attachment['focalPoint'], blurhash: supported_blurhash?(attachment['blurhash']) ? attachment['blurhash'] : nil)
+        href           = Addressable::URI.parse(attachment['url']).normalize.to_s
+        thumbnail_href = attachment['icon'].is_a?(String) ? attachment['icon'] : attachment.dig('icon', 'url')
+        thumbnail_href = Addressable::URI.parse(thumbnail_href).normalize.to_s if thumbnail_href.present?
+
+        media_attachment = MediaAttachment.create(account: @account, remote_url: href, thumbnail_remote_url: thumbnail_href, description: attachment['summary'].presence || attachment['name'].presence, focus: attachment['focalPoint'], blurhash: supported_blurhash?(attachment['blurhash']) ? attachment['blurhash'] : nil)
         media_attachments << media_attachment
 
         next if unsupported_media_type?(attachment['mediaType']) || skip_download?
